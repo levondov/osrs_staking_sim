@@ -10,11 +10,6 @@ import matplotlib.pyplot as plt
 # set combat stats for attack strength defence and hp
 a,s,d,h = 99,99,99,99
 
-# equipment bonus
-Ba = 90 # attack slash bonus for whip
-Bs = 86 # strength bonus for whip
-Bd = 0 # defence slash bonus for whip
-
 def changeStance(stance):
 	""" calculates effective atk/str/def levels based on stance """
 	# controlled stance gives +1 to all 3 skills
@@ -32,18 +27,24 @@ def changeStance(stance):
 	else:
 		print 'unknown stance given'
 	return (Aa,As,Ad)
-def calcMaxRolls(stance):
+	
+def calcMaxRolls(stance,hasta):
 	""" calculates max rolls for atk/str/def """
+	# the hasta argument tells us if the enemy has a hasta on when calculating our chance to hit
 	Aa,As,Ad = changeStance(stance)
-
+	Ba = 90 # attack slash bonus for whip
+	Bs = 86 # strength bonus for whip
+	Bd = 0 # defence slash bonus for whip/hasta
+	if hasta:
+		Bd = 13
 	AsMax = np.floor(0.5 + As*(Bs+64)/640)
 	AaMax = Aa*(Ba+64)
 	AdMax = Ad*(Bd+64)
 	return (AaMax,AsMax,AdMax)
 
-def calcHit(stance):
+def calcHit(stance,hasta):
 	""" calculate chance to hit """
-	AaMax,AsMax,AdMax = calcMaxRolls(stance)
+	AaMax,AsMax,AdMax = calcMaxRolls(stance,hasta)
 	if AaMax > AdMax:
 		hitChance =  (1 - (AdMax+2.)/(2*(AaMax+1)))
 	else:
@@ -56,56 +57,47 @@ def calcHit(stance):
 		dmg = 0
 	return dmg
 
-def duel(styles=('atk','atk'),runs=1,info=False):
+def duel(styles=('atk','atk'),hasta=(False,False),runs=1,info=False):
+	""" Run duels """
 	P1win,P2win = 0,0 # number of wins
+	
 	for i in range(runs+1):
 		print 'Duel %s/%s' % (str(i),str(runs))
 		P1hp,P2hp = h,h # set health
 		pid = np.round(np.random.rand(1)[0])
 
 		while True:
+			# calculate player hits
+			P1dmg = calcHit(styles[0],hasta[1])
+			P2dmg = calcHit(styles[0],hasta[0])	
+					
 			if pid: # player 1 wins pid
-				# calculate player hits
-				P1dmg = calcHit(styles[0])
-				P2dmg = calcHit(styles[0])
 				# calculate player hp after hit
 				P2hp-=P1dmg
 				if P2hp <= 0:
 					P1win+=1
-					if info:
-						print '(P1) hp:%s dmg:%s | (P2) hp:%s dmg%s' % (str(P1hp),str(P1dmg),str(P2hp),str(P2dmg))
+					if info: print '(P1) hp:%s dmg:%s | (P2) hp:%s dmg%s' % (str(P1hp),str(P1dmg),str(P2hp),str(P2dmg))
 					break
 				P1hp -= P2dmg
 				if P1hp <= 0:
 					P2win+=1
-					if info:
-						print '(P1) hp:%s dmg:%s | (P2) hp:%s dmg%s' % (str(P1hp),str(P1dmg),str(P2hp),str(P2dmg))
+					if info: print '(P1) hp:%s dmg:%s | (P2) hp:%s dmg%s' % (str(P1hp),str(P1dmg),str(P2hp),str(P2dmg))
 					break
-				if info:
-					print '(P1) hp:%s dmg:%s | (P2) hp:%s dmg:%s' %(str(P1hp),str(P1dmg),str(P2hp),str(P2dmg))
+				if info: print '(P1) hp:%s dmg:%s | (P2) hp:%s dmg:%s' %(str(P1hp),str(P1dmg),str(P2hp),str(P2dmg))
 			else: # player 2 wins pid
-				# calculate player hits
-				P1dmg = calcHit(styles[0])
-				P2dmg = calcHit(styles[0])
 				# calculate player hp after hit
 				P1hp-=P2dmg
 				if P1hp <= 0:
 					P2win+=1
-					if info:
-						print '(P1) hp:%s dmg:%s | (P2) hp:%s dmg%s' % (str(P1hp),str(P1dmg),str(P2hp),str(P2dmg))
+					if info: print '(P1) hp:%s dmg:%s | (P2) hp:%s dmg%s' % (str(P1hp),str(P1dmg),str(P2hp),str(P2dmg))
 					break
 				P2hp -= P1dmg
 				if P2hp <= 0:
 					P1win+=1
-					if info:
-						print '(P1) hp:%s dmg:%s | (P2) hp:%s dmg%s' % (str(P1hp),str(P1dmg),str(P2hp),str(P2dmg))
+					if info: print '(P1) hp:%s dmg:%s | (P2) hp:%s dmg%s' % (str(P1hp),str(P1dmg),str(P2hp),str(P2dmg))
 					break
-				if info:
-					print '(P1) hp:%s dmg:%s | (P2) hp:%s dmg:%s' %(str(P1hp),str(P1dmg),str(P2hp),str(P2dmg))			
+				if info: print '(P1) hp:%s dmg:%s | (P2) hp:%s dmg:%s' %(str(P1hp),str(P1dmg),str(P2hp),str(P2dmg))			
 	runs = runs + 0.0	
 	return 	(P1win/runs,P2win/runs)
-		
-
-print duel(('def','atk'),10000,False)
 
 
